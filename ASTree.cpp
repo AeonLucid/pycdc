@@ -2507,26 +2507,41 @@ PycRef<ASTNode> BuildFromCode(PycRef<PycCode> code, PycModule* mod)
             }
             break;
         case Pyc::DICT_UPDATE_A:
-               {
-                PycRef<ASTNode> ddd = stack.top();
+            {
+                PycRef<ASTMap> map = stack.top().cast<ASTMap>();;
                 stack.pop();
-                //PycRef<ASTMap> map = stack.top().cast<ASTMap>();
-                //map->update(d);
+                PycRef<ASTMap> dict = stack.top().cast<ASTMap>();
+                for (const auto& entry : map->values())
+                {
+                    dict->add(entry.first, entry.second);
+                }
             }
             break; 
          case Pyc::MAP_ADD_A:
             {
-                PycRef<ASTNode> key = stack.top();
-                stack.pop();
-                PycRef<ASTNode> value = stack.top();
-                stack.pop();
-                PycRef<ASTMap> map = stack.top().cast<ASTMap>();
-                map->add(key, value);
+                if (mod->verCompare(3, 8) >= 0)
+                {
+                    PycRef<ASTNode> value = stack.top();
+                    stack.pop();
+                    PycRef<ASTNode> key = stack.top();
+                    stack.pop();
+                    PycRef<ASTMap> map = stack.top().cast<ASTMap>();
+                    map->add(key, value);
+                }
+                else 
+                {
+                    PycRef<ASTNode> key = stack.top();
+                    stack.pop();
+                    PycRef<ASTNode> value = stack.top();
+                    stack.pop();
+                    PycRef<ASTMap> map = stack.top().cast<ASTMap>();
+                    map->add(key, value);
+                }
             }
             break;
          case Pyc::END_SEND:
          case Pyc::END_FOR:
-               {
+            {
                 PycRef<ASTNode> ddd2 = stack.top();
                 stack.pop();
                 PycRef<ASTNode> ddd3 = stack.top();
