@@ -2508,12 +2508,35 @@ PycRef<ASTNode> BuildFromCode(PycRef<PycCode> code, PycModule* mod)
             break;
         case Pyc::DICT_UPDATE_A:
             {
-                PycRef<ASTMap> map = stack.top().cast<ASTMap>();;
+                PycRef<ASTNode> node = stack.top();
                 stack.pop();
                 PycRef<ASTMap> dict = stack.top().cast<ASTMap>();
-                for (const auto& entry : map->values())
+
+                if (node.type() == ASTNode::NODE_MAP)
                 {
-                    dict->add(entry.first, entry.second);
+                    for (const auto& entry : node.cast<ASTMap>()->values())
+                    {
+                        dict->add(entry.first, entry.second);
+                    }
+                }
+                else if (node.type() == ASTNode::NODE_CONST_MAP)
+                {
+                    PycRef<ASTConstMap> const_map = node.cast<ASTConstMap>();
+                    PycTuple::value_t keys = const_map->keys().cast<ASTObject>()->object().cast<PycTuple>()->values();
+                    ASTConstMap::values_t values = const_map->values();
+
+                    auto map = new ASTMap;
+                    for (const auto& key : keys) {
+                        // Values are pushed onto the stack in reverse order.
+                        PycRef<ASTNode> value = values.back();
+                        values.pop_back();
+
+                        dict->add(new ASTObject(key), value);
+                    }
+                }
+                else 
+                {
+                    fprintf(stderr, "Unsupported node type %d in DICT_UPDATE_A\n", node.type());
                 }
             }
             break; 
